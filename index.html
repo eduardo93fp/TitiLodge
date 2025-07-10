@@ -23,7 +23,7 @@
             border-radius: 12px; /* Rounded corners for the main container */
             box-shadow: 0 10px 25px rgba(0, 0, 0, 0.1);
             width: 100%;
-            max-width: 900px; /* Max width for larger screens */
+            max-width: 1500px; /* Max width for larger screens */
             padding: 24px;
             box-sizing: border-box; /* Include padding in width calculation */
         }
@@ -46,7 +46,7 @@
             min-height: 140px; /* Adjusted to fit up to 3 reservation boxes comfortably */
             border: 1px solid #e5e7eb; /* Light gray border */
             border-radius: 8px; /* Rounded corners for day cells */
-            padding: 8px;
+            padding: 4px;
             display: flex;
             flex-direction: column;
             align-items: flex-start; /* Aligns reservations to the left */
@@ -72,7 +72,7 @@
         .reservation-entry {
             padding: 4px 8px;
             border-radius: 6px; /* Rounded corners for reservation entries */
-            font-size: 0.75rem; /* Smaller font size for reservation details */
+            font-size: 0.7rem; /* Smaller font size for reservation details */
             font-weight: 500;
             width: 100%; /* Take full width of the cell */
             overflow: hidden; /* Hide overflow text */
@@ -191,13 +191,13 @@
 
         <!-- Single calendar-grid container for both headers and days -->
         <div id="calendarGridContainer" class="calendar-grid">
-            <div class="day-header">Sun</div>
             <div class="day-header">Mon</div>
             <div class="day-header">Tue</div>
             <div class="day-header">Wed</div>
             <div class="day-header">Thu</div>
             <div class="day-header">Fri</div>
             <div class="day-header">Sat</div>
+            <div class="day-header">Sun</div>
             <!-- Calendar days will be rendered here by JavaScript -->
         </div>
     </div>
@@ -356,7 +356,7 @@
 
             const firstDayOfMonth = new Date(currentYear, currentMonth, 1);
             const daysInMonth = new Date(currentYear, currentMonth + 1, 0).getDate();
-            const startDay = firstDayOfMonth.getDay(); // Day of the week (0 for Sunday, 6 for Saturday)
+            const startDay = (firstDayOfMonth.getDay()+6)%7; // Day of the week (0 for Sunday, 6 for Saturday)
 
             // Update month and year display
             currentMonthYearEl.textContent = new Date(currentYear, currentMonth).toLocaleString('en-US', {
