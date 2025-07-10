@@ -1,0 +1,504 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Lodge Reservation Calendar</title>
+    <!-- Tailwind CSS CDN for styling -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <style>
+        /* Custom styles for the calendar */
+        body {
+            font-family: "Inter", sans-serif;
+            background-color: #f3f4f6; /* Light gray background */
+            display: flex;
+            justify-content: center;
+            align-items: center; /* Changed from flex-start to center for vertical centering */
+            min-height: 100vh;
+            padding: 20px;
+        }
+
+        .calendar-container {
+            background-color: #ffffff;
+            border-radius: 12px; /* Rounded corners for the main container */
+            box-shadow: 0 10px 25px rgba(0, 0, 0, 0.1);
+            width: 100%;
+            max-width: 900px; /* Max width for larger screens */
+            padding: 24px;
+            box-sizing: border-box; /* Include padding in width calculation */
+        }
+
+        .calendar-grid {
+            display: grid;
+            grid-template-columns: repeat(7, 1fr); /* 7 columns for days of the week */
+            gap: 8px; /* Gap between day cells */
+        }
+
+        .day-header {
+            text-align: center;
+            font-weight: 600;
+            color: #4b5563; /* Gray text */
+            padding: 8px; /* Consistent padding with day-cell */
+        }
+
+        .day-cell {
+            /* Increased min-height to accommodate day number and multiple reservations */
+            min-height: 140px; /* Adjusted to fit up to 3 reservation boxes comfortably */
+            border: 1px solid #e5e7eb; /* Light gray border */
+            border-radius: 8px; /* Rounded corners for day cells */
+            padding: 8px;
+            display: flex;
+            flex-direction: column;
+            align-items: flex-start; /* Aligns reservations to the left */
+            gap: 4px; /* Gap between day number and reservations, and between reservations */
+            background-color: #f9fafb; /* Slightly off-white background for cells */
+        }
+
+        .day-number {
+            font-weight: 700;
+            font-size: 1.125rem; /* Larger font for day number */
+            color: #1f2937; /* Darker gray for numbers */
+            margin-bottom: 8px; /* Add space below the day number */
+            align-self: flex-end; /* Align day number to the top-right within the flex container */
+            margin-left: auto; /* Push it to the right */
+        }
+
+        .empty-day-cell {
+            background-color: #f3f4f6; /* Lighter background for empty cells */
+            border: 1px dashed #d1d5db; /* Dashed border for empty cells */
+        }
+
+        /* Default reservation entry style (fallback) */
+        .reservation-entry {
+            padding: 4px 8px;
+            border-radius: 6px; /* Rounded corners for reservation entries */
+            font-size: 0.75rem; /* Smaller font size for reservation details */
+            font-weight: 500;
+            width: 100%; /* Take full width of the cell */
+            overflow: hidden; /* Hide overflow text */
+            white-space: nowrap; /* Prevent text wrapping */
+            text-overflow: ellipsis; /* Add ellipsis for overflow text */
+            cursor: pointer; /* Indicate clickable */
+            transition: background-color 0.2s ease-in-out;
+        }
+
+        /* Specific styles for different platforms */
+        .platform-airbnb {
+            background-color: #FF5A5F; /* Airbnb red */
+            color: #ffffff;
+        }
+        .platform-airbnb:hover {
+            background-color: #e04e52;
+        }
+
+        .platform-booking {
+            background-color: #003580; /* Booking.com blue */
+            color: #ffffff;
+        }
+        .platform-booking:hover {
+            background-color: #002c6b;
+        }
+
+        .platform-direct {
+            background-color: #4CAF50; /* Green for direct bookings */
+            color: #ffffff;
+        }
+        .platform-direct:hover {
+            background-color: #45a049;
+        }
+
+        .platform-other {
+            background-color: #FFC107; /* Amber for other platforms */
+            color: #333333; /* Darker text for contrast */
+        }
+        .platform-other:hover {
+            background-color: #e0a800;
+        }
+
+        /* Modal styles remain the same */
+        .modal {
+            display: none; /* Hidden by default */
+            position: fixed; /* Stay in place */
+            z-index: 1000; /* Sit on top */
+            left: 0;
+            top: 0;
+            width: 100%; /* Full width */
+            height: 100%; /* Full height */
+            overflow: auto; /* Enable scroll if needed */
+            background-color: rgba(0,0,0,0.4); /* Black w/ opacity */
+            justify-content: center;
+            align-items: center;
+        }
+
+        .modal-content {
+            background-color: #fefefe;
+            margin: auto;
+            padding: 20px;
+            border-radius: 12px;
+            box-shadow: 0 4px 8px rgba(0,0,0,0.2);
+            width: 90%;
+            max-width: 500px;
+            position: relative;
+        }
+
+        .close-button {
+            color: #aaa;
+            position: absolute;
+            top: 10px;
+            right: 15px;
+            font-size: 28px;
+            font-weight: bold;
+            cursor: pointer;
+        }
+
+        .close-button:hover,
+        .close-button:focus {
+            color: black;
+            text-decoration: none;
+            cursor: pointer;
+        }
+
+        /* Responsive adjustments */
+        @media (max-width: 768px) {
+            .calendar-grid {
+                gap: 4px;
+            }
+            .day-cell {
+                min-height: 100px; /* Adjusted for smaller screens */
+                padding: 4px;
+            }
+            .day-number {
+                font-size: 1rem;
+                margin-bottom: 4px; /* Less space on smaller screens */
+            }
+            .reservation-entry {
+                font-size: 0.65rem;
+                padding: 3px 6px;
+            }
+            .calendar-container {
+                padding: 16px;
+            }
+        }
+    </style>
+</head>
+<body class="bg-gray-100 p-5 flex justify-center items-center min-h-screen">
+    <div class="calendar-container">
+        <div class="flex justify-between items-center mb-6">
+            <button id="prevMonth" class="px-4 py-2 bg-blue-500 text-white rounded-lg shadow-md hover:bg-blue-600 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-opacity-50 transition ease-in-out duration-150">Previous</button>
+            <h2 id="currentMonthYear" class="text-2xl font-bold text-gray-800"></h2>
+            <button id="nextMonth" class="px-4 py-2 bg-blue-500 text-white rounded-lg shadow-md hover:bg-blue-600 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-opacity-50 transition ease-in-out duration-150">Next</button>
+        </div>
+
+        <!-- Single calendar-grid container for both headers and days -->
+        <div id="calendarGridContainer" class="calendar-grid">
+            <div class="day-header">Sun</div>
+            <div class="day-header">Mon</div>
+            <div class="day-header">Tue</div>
+            <div class="day-header">Wed</div>
+            <div class="day-header">Thu</div>
+            <div class="day-header">Fri</div>
+            <div class="day-header">Sat</div>
+            <!-- Calendar days will be rendered here by JavaScript -->
+        </div>
+    </div>
+
+    <!-- Reservation Detail Modal -->
+    <div id="reservationModal" class="modal">
+        <div class="modal-content">
+            <span class="close-button" id="closeModal">&times;</span>
+            <h3 class="text-xl font-bold mb-4 text-gray-800">Reservation Details</h3>
+            <div id="modalDetails" class="text-gray-700 space-y-2">
+                <!-- Details will be populated here -->
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // IMPORTANT: Replace this URL with the CSV URL obtained from Google Sheets "Publish to the web"
+        // Example: 'https://docs.google.com/spreadsheets/d/e/2PACX-1v.../pub?gid=0&single=true&output=csv'
+        const GOOGLE_SHEET_CSV_URL = 'https://docs.google.com/spreadsheets/d/e/2PACX-1vQ6wVAV6iGTxhhA2hfxZq9oMPfFoNdX1JzZSsRC1VtRrQiCTClVgNczwabRhKuJAw/pub?gid=850396164&single=true&output=csv'; // <--- YOU MUST REPLACE THIS LINE WITH YOUR ACTUAL URL
+
+        let reservationsData = []; // This will now be populated from the Google Sheet
+
+        // Changed to target the single grid container
+        const calendarGridContainerEl = document.getElementById('calendarGridContainer');
+        const currentMonthYearEl = document.getElementById('currentMonthYear');
+        const prevMonthBtn = document.getElementById('prevMonth');
+        const nextMonthBtn = document.getElementById('nextMonth');
+        const reservationModal = document.getElementById('reservationModal');
+        const closeModalBtn = document.getElementById('closeModal');
+        const modalDetailsEl = document.getElementById('modalDetails');
+
+        let currentMonth = new Date().getMonth(); // Current month (0-11)
+        let currentYear = new Date().getFullYear(); // Current year
+
+        /**
+         * Fetches and parses reservation data from the Google Sheet CSV URL.
+         */
+        async function fetchReservations() {
+            try {
+                // Check if the URL is still the placeholder
+                if (GOOGLE_SHEET_CSV_URL === 'YOUR_GOOGLE_SHEET_CSV_URL_HERE') {
+                    throw new Error('Google Sheet CSV URL is not set. Please replace "YOUR_GOOGLE_SHEET_CSV_URL_HERE" with your actual published Google Sheet URL.');
+                }
+
+                const response = await fetch(GOOGLE_SHEET_CSV_URL);
+                if (!response.ok) {
+                    throw new Error(`HTTP error! status: ${response.status}`);
+                }
+                const csvText = await response.text();
+                reservationsData = parseCSV(csvText);
+                renderCalendar(); // Render calendar after data is fetched
+            } catch (error) {
+                console.error('Error fetching or parsing reservations:', error);
+                // Display an error message to the user in the UI if needed
+                alert(`Failed to load reservation data: ${error.message}. Please check the Google Sheet URL and ensure it is published correctly.`);
+            }
+        }
+
+        /**
+         * Converts a date string from DD/MM/YYYY format to YYYY-MM-DD format.
+         * @param {string} dateString - The date string in DD/MM/YYYY format.
+         * @returns {string|null} The date string in YYYY-MM-DD format or null if invalid.
+         */
+        function convertDdMmYyyyToYyyyMmDd(dateString) {
+            if (!dateString) return null;
+            const parts = dateString.split('/');
+            if (parts.length === 3) {
+                const day = parts[0].padStart(2, '0');
+                const month = parts[1].padStart(2, '0');
+                const year = parts[2];
+                return `${year}-${month}-${day}`;
+            }
+            return null; // Return null for invalid format
+        }
+
+        /**
+         * Parses CSV text into an array of reservation objects.
+         * Assumes the first row is the header.
+         * @param {string} csv - The CSV data as a string.
+         * @returns {Array<Object>} An array of reservation objects.
+         */
+        function parseCSV(csv) {
+            const lines = csv.split('\n').filter(line => line.trim() !== ''); // Split by line, remove empty lines
+            if (lines.length === 0) return [];
+
+            const headers = lines[0].split(',').map(header => header.trim()); // Get headers from first line
+            const data = [];
+
+            for (let i = 1; i < lines.length; i++) {
+                const values = lines[i].split(',');
+                const row = {};
+                headers.forEach((header, index) => {
+                    let value = values[index] ? values[index].trim() : null;
+
+                    // Type conversion based on expected data types from your table structure
+                    switch (header) {
+                        case 'reservation_id':
+                        case 'listing_id':
+                        case 'num_guests':
+                        case 'review_rating':
+                            row[header] = value ? parseInt(value) : null;
+                            break;
+                        case 'price_per_night':
+                        case 'total_reservation_price':
+                        case 'payment_amount':
+                            row[header] = value ? parseFloat(value) : null;
+                            break;
+                        case 'check_in_date':
+                        case 'check_out_date':
+                        case 'booking_date':
+                        case 'payment_date':
+                        case 'review_date':
+                            // Convert DD/MM/YYYY to YYYY-MM-DD for consistent Date parsing
+                            row[header] = convertDdMmYyyyToYyyyMmDd(value);
+                            break;
+                        default:
+                            row[header] = value;
+                    }
+                });
+                // Only add rows that have a reservation_id (to avoid empty template rows)
+                // Also ensure check_in_date and check_out_date are valid after parsing
+                if (row.reservation_id !== null && row.reservation_id !== undefined && !isNaN(row.reservation_id) && row.check_in_date && row.check_out_date) {
+                    data.push(row);
+                }
+            }
+            return data;
+        }
+
+        /**
+         * Returns Tailwind CSS classes for background and text color based on the platform.
+         * @param {string} platform - The platform name (e.g., 'Airbnb', 'Booking', 'Direct').
+         * @returns {string} Tailwind CSS classes.
+         */
+        function getPlatformColorClass(platform) {
+            switch (platform ? platform.toLowerCase() : '') {
+                case 'airbnb':
+                    return 'platform-airbnb'; // Custom class defined in <style>
+                case 'booking':
+                    return 'platform-booking'; // Custom class defined in <style>
+                case 'direct':
+                    return 'platform-direct'; // Custom class defined in <style>
+                default:
+                    return 'platform-other'; // Custom class for unknown/other platforms
+            }
+        }
+
+        /**
+         * Renders the calendar grid for the current month and year.
+         */
+        function renderCalendar() {
+            // Clear only the day cells, keeping the headers
+            // We need to remove all children *after* the initial 7 day-headers
+            while (calendarGridContainerEl.children.length > 7) {
+                calendarGridContainerEl.removeChild(calendarGridContainerEl.lastChild);
+            }
+
+            const firstDayOfMonth = new Date(currentYear, currentMonth, 1);
+            const daysInMonth = new Date(currentYear, currentMonth + 1, 0).getDate();
+            const startDay = firstDayOfMonth.getDay(); // Day of the week (0 for Sunday, 6 for Saturday)
+
+            // Update month and year display
+            currentMonthYearEl.textContent = new Date(currentYear, currentMonth).toLocaleString('en-US', {
+                month: 'long',
+                year: 'numeric'
+            });
+
+            // Add empty cells for days before the 1st of the month
+            for (let i = 0; i < startDay; i++) {
+                const emptyCell = document.createElement('div');
+                emptyCell.classList.add('day-cell', 'empty-day-cell');
+                calendarGridContainerEl.appendChild(emptyCell);
+            }
+
+            // Add cells for each day of the month
+            for (let day = 1; day <= daysInMonth; day++) {
+                const dayCell = document.createElement('div');
+                dayCell.classList.add('day-cell');
+                dayCell.innerHTML = `<span class="day-number">${day}</span>`;
+                dayCell.dataset.date = `${currentYear}-${String(currentMonth + 1).padStart(2, '0')}-${String(day).padStart(2, '0')}`;
+                calendarGridContainerEl.appendChild(dayCell);
+            }
+
+            renderReservations(); // Place reservations on the newly rendered calendar
+        }
+
+        /**
+         * Places reservations on the calendar grid.
+         */
+        function renderReservations() {
+            // Iterate over each reservation
+            reservationsData.forEach(reservation => {
+                // Ensure check_in_date and check_out_date are valid strings in YYYY-MM-DD format
+                if (!reservation.check_in_date || !reservation.check_out_date) {
+                    console.warn('Skipping reservation due to missing check-in or check-out date after parsing:', reservation);
+                    return;
+                }
+
+                // Parse dates, ensuring consistent format for comparison
+                // The 'T00:00:00' ensures it's parsed as UTC midnight to avoid timezone issues affecting day calculations
+                const checkIn = new Date(reservation.check_in_date + 'T00:00:00');
+                const checkOut = new Date(reservation.check_out_date + 'T00:00:00');
+
+                // Validate parsed dates
+                if (isNaN(checkIn.getTime()) || isNaN(checkOut.getTime())) {
+                    console.error('Invalid date object created for reservation (check format after parsing):', reservation);
+                    return;
+                }
+
+                // Loop through each day from check-in to check-out (exclusive of check-out day)
+                for (let d = new Date(checkIn); d < checkOut; d.setDate(d.getDate() + 1)) {
+                    // Check if the current day 'd' falls within the currently displayed calendar month
+                    if (d.getMonth() === currentMonth && d.getFullYear() === currentYear) {
+                        const formattedDate = `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`;
+                        // Select the day cell within the single grid container
+                        const dayCell = calendarGridContainerEl.querySelector(`[data-date="${formattedDate}"]`);
+
+                        if (dayCell) {
+                            const reservationEl = document.createElement('div');
+                            reservationEl.classList.add('reservation-entry');
+
+                            // Add platform-specific color class
+                            const platform = reservation.Platform; // Access the 'Platform' column
+                            reservationEl.classList.add(getPlatformColorClass(platform));
+
+                            // Display name and initial, ensure listing_name and guest_first_name exist
+                            const listingName = reservation.listing_name || 'N/A';
+                            const guestName = reservation.guest_first_name ? `${reservation.guest_first_name} ${reservation.guest_last_name ? reservation.guest_last_name.charAt(0) + '.' : ''}` : 'N/A';
+                            reservationEl.textContent = `${listingName} - ${guestName}`;
+                            reservationEl.dataset.reservationId = reservation.reservation_id; // Store ID for modal
+
+                            // Add click listener to show modal
+                            reservationEl.addEventListener('click', () => showReservationDetails(reservation.reservation_id));
+
+                            dayCell.appendChild(reservationEl);
+                        }
+                    }
+                }
+            });
+        }
+
+        /**
+         * Displays reservation details in a modal.
+         * @param {string} reservationId - The ID of the reservation to display.
+         */
+        function showReservationDetails(reservationId) {
+            const reservation = reservationsData.find(res => res.reservation_id == reservationId); // Use loose equality for potential type mismatch (string vs number)
+            if (reservation) {
+                modalDetailsEl.innerHTML = `
+                    <p><strong class="font-semibold">Reservation ID:</strong> ${reservation.reservation_id || 'N/A'}</p>
+                    <p><strong class="font-semibold">Property:</strong> ${reservation.listing_name || 'N/A'}</p>
+                    <p><strong class="font-semibold">Guest:</strong> ${reservation.guest_first_name || 'N/A'} ${reservation.guest_last_name || ''}</p>
+                    <p><strong class="font-semibold">Check-in:</strong> ${reservation.check_in_date || 'N/A'}</p>
+                    <p><strong class="font-semibold">Check-out:</strong> ${reservation.check_out_date || 'N/A'}</p>
+                    <p><strong class="font-semibold">Guests:</strong> ${reservation.num_guests || 'N/A'}</p>
+                    <p><strong class="font-semibold">Total Price:</strong> $${(reservation.total_reservation_price !== null && reservation.total_reservation_price !== undefined) ? reservation.total_reservation_price.toFixed(2) : 'N/A'}</p>
+                    <p><strong class="font-semibold">Platform:</strong> ${reservation.Platform || 'N/A'}</p> <!-- Added Platform to modal -->
+                    <p><strong class="font-semibold">Status:</strong> ${reservation.reservation_status || 'N/A'}</p>
+                    <p><strong class="font-semibold">Payment Status:</strong> ${reservation.payment_status || 'N/A'}</p>
+                    ${(reservation.review_rating !== null && reservation.review_rating !== undefined) ? `<p><strong class="font-semibold">Rating:</strong> ${reservation.review_rating} / 5</p>` : ''}
+                    ${reservation.review_comment ? `<p><strong class="font-semibold">Comment:</strong> ${reservation.review_comment}</p>` : ''}
+                `;
+                reservationModal.style.display = 'flex'; // Show the modal
+            } else {
+                console.error('Reservation not found for ID:', reservationId);
+                alert('Reservation details not found.');
+            }
+        }
+
+        // Event listeners for navigation buttons
+        prevMonthBtn.addEventListener('click', () => {
+            currentMonth--;
+            if (currentMonth < 0) {
+                currentMonth = 11;
+                currentYear--;
+            }
+            renderCalendar();
+        });
+
+        nextMonthBtn.addEventListener('click', () => {
+            currentMonth++;
+            if (currentMonth > 11) {
+                currentMonth = 0;
+                currentYear++;
+            }
+            renderCalendar();
+        });
+
+        // Event listener to close the modal
+        closeModalBtn.addEventListener('click', () => {
+            reservationModal.style.display = 'none';
+        });
+
+        // Close modal if user clicks outside of it
+        window.addEventListener('click', (event) => {
+            if (event.target === reservationModal) {
+                reservationModal.style.display = 'none';
+            }
+        });
+
+        // Initial fetch and render when the page loads
+        window.onload = fetchReservations;
+    </script>
+</body>
+</html>
