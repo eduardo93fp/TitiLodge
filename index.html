@@ -446,7 +446,6 @@
             const reservation = reservationsData.find(res => res.reservation_id == reservationId); // Use loose equality for potential type mismatch (string vs number)
             if (reservation) {
                 modalDetailsEl.innerHTML = `
-                    <p><strong class="font-semibold">Reservation ID:</strong> ${reservation.reservation_id || 'N/A'}</p>
                     <p><strong class="font-semibold">Property:</strong> ${reservation.listing_name || 'N/A'}</p>
                     <p><strong class="font-semibold">Guest:</strong> ${reservation.guest_first_name || 'N/A'} ${reservation.guest_last_name || ''}</p>
                     <p><strong class="font-semibold">Check-in:</strong> ${reservation.check_in_date || 'N/A'}</p>
@@ -454,7 +453,6 @@
                     <p><strong class="font-semibold">Guests:</strong> ${reservation.num_guests || 'N/A'}</p>
                     <p><strong class="font-semibold">Total Price:</strong> $${(reservation.total_reservation_price !== null && reservation.total_reservation_price !== undefined) ? reservation.total_reservation_price.toFixed(2) : 'N/A'}</p>
                     <p><strong class="font-semibold">Platform:</strong> ${reservation.Platform || 'N/A'}</p> <!-- Added Platform to modal -->
-                    <p><strong class="font-semibold">Status:</strong> ${reservation.reservation_status || 'N/A'}</p>
                     <p><strong class="font-semibold">Payment Status:</strong> ${reservation.payment_status || 'N/A'}</p>
                     ${(reservation.review_rating !== null && reservation.review_rating !== undefined) ? `<p><strong class="font-semibold">Rating:</strong> ${reservation.review_rating} / 5</p>` : ''}
                     ${reservation.review_comment ? `<p><strong class="font-semibold">Comment:</strong> ${reservation.review_comment}</p>` : ''}
