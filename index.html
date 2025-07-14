@@ -389,6 +389,11 @@
         function renderReservations() {
             // Iterate over each reservation
             reservationsData.forEach(reservation => {
+                // Add this new condition to skip cancelled reservations
+                if (reservation.reservation_status && reservation.reservation_status.toLowerCase() === 'cancelled') {
+                    return; // Skip this iteration (this reservation)
+                }
+                
                 // Ensure check_in_date and check_out_date are valid strings in YYYY-MM-DD format
                 if (!reservation.check_in_date || !reservation.check_out_date) {
                     console.warn('Skipping reservation due to missing check-in or check-out date after parsing:', reservation);
